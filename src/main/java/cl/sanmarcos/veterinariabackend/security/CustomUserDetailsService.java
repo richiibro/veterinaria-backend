@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +24,19 @@ public class CustomUserDetailsService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
 
+        List<SimpleGrantedAuthority> authorities;
+        if (usuario.getRol() != null) {
+            String rolNombre = usuario.getRol().name().trim().toUpperCase();
+            String authority = rolNombre.startsWith("ROLE_") ? rolNombre : "ROLE_" + rolNombre;
+            authorities = Collections.singletonList(new SimpleGrantedAuthority(authority));
+        } else {
+            authorities = Collections.emptyList();
+        }
+
         return new User(
                 usuario.getEmail(),
                 usuario.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority(usuario.getRol().name()))
+                authorities
         );
     }
 }
